@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   combineLatest,
+  debounceTime,
   filter,
   forkJoin,
   map,
@@ -34,7 +35,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // 1.1. Add functionality to changeCharactersInput method. Changes searchTermByCharacters Subject value on input change.
     const inputValue: string = element.target.value;
     // YOUR CODE STARTS HERE
-
+    this.searchTermByCharacters.next(inputValue);
     // YOUR CODE ENDS HERE
   }
 
@@ -48,15 +49,25 @@ export class AppComponent implements OnInit, OnDestroy {
     this.charactersResults$ = this.searchTermByCharacters
         .pipe
         // YOUR CODE STARTS HERE
-
+        (
+          debounceTime(300),
+          filter((searchTerm: string) => searchTerm.length >= 3),
+          switchMap((searchTerm: string) => this.mockDataService.getCharacters(searchTerm))
+        );
         // YOUR CODE ENDS HERE
-        ();
+        
   }
 
   loadCharactersAndPlanet(): void {
     // 4. On clicking the button 'Load Characters And Planets', it is necessary to process two requests and combine the results of both requests into one result array. As a result, a list with the names of the characters and the names of the planets is displayed on the screen.
     // Your code should looks like this: this.planetAndCharactersResults$ = /* Your code */
     // YOUR CODE STARTS HERE
+    this.planetAndCharactersResults$ = forkJoin({
+      characters: this.mockDataService.getCharacters(),
+      planets: this.mockDataService.getPlanets()})
+        .pipe(
+            map(({ characters, planets }) => [...characters, ...planets])
+        );
     // YOUR CODE ENDS HERE
   }
 
@@ -67,12 +78,27 @@ export class AppComponent implements OnInit, OnDestroy {
     - Subscribe to changes
     - Check the received value using the areAllValuesTrue function and pass them to the isLoading variable. */
     // YOUR CODE STARTS HERE
+  const characterLoader$ = this.mockDataService.getCharactersLoader();
+  const planetLoader$ = this.mockDataService.getPlanetLoader();
+
+  const loaderSubscription = combineLatest([characterLoader$, planetLoader$])
+    .pipe(
+      map(([characterLoading, planetLoading]) =>
+        this.areAllValuesTrue([characterLoading, planetLoading])
+      )
+    )
+    .subscribe((loadingState) => {
+      this.isLoading = loadingState; // Update isLoading state
+    });
+
+  this.subscriptions.push(loaderSubscription);
     // YOUR CODE ENDS HERE
   }
 
   ngOnDestroy(): void {
     // 5.2 Unsubscribe from all subscriptions
     // YOUR CODE STARTS HERE
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
     // YOUR CODE ENDS HERE
   }
 
