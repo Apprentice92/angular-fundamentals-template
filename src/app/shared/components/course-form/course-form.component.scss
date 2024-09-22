@@ -1,37 +1,63 @@
 @import 'src/app/shared/styles/styles';
-
 .course {
  min-width: 60vw;
-
   &__flex {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-
     & input {
       flex: 1;
     }
-
     & app-button {
       margin-left: 16px;
     }
-
     & .course__duration {
       margin-left: 16px;
     }
   }
-
   &__authors {
     margin-top: 8px;
     display: flex;
-
     &-item {
       margin-right: 10px;
     }
   }
-
   &__icon {
     margin-left: 4px;
     cursor: pointer;
+  }
+}
+
+.form__action {
+  display: flex;
+  gap: 10px;
+  float: right;
+}
+.authors_list{
+  display: flex;
+  gap: 5px;
+}
+.course__authors {
+  display: block;
+}
+.container {
+  display: flex;
+  .column {
+    &_left {
+      flex: 2;
+      input {
+        max-width: 400px;
+        padding: 8px;
+        margin-bottom: 10px;
+        margin-right: 0px;
+      }
+    }
+    &_right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
   }
 }

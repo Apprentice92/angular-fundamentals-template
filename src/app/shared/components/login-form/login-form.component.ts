@@ -1,6 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
 import { NgForm } from '@angular/forms';
-
 @Component({
   selector: 'app-login-form',
   templateUrl: './login-form.component.html',
@@ -8,5 +7,15 @@ import { NgForm } from '@angular/forms';
 })
 export class LoginFormComponent {
   @ViewChild("loginForm") public loginForm!: NgForm;
-  //Use the names `email` and `password` for form controls.
+  email!: string;
+  password!: string;
+  onSubmit() {
+    if (this.loginForm.valid) {
+      console.log(this.loginForm.value);
+      this.loginForm.reset();
+    } else {
+      alert('Form is not valid');
+      this.loginForm.control.markAllAsTouched(); 
+    }
+  }
 }
