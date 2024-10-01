@@ -23,7 +23,6 @@
           <span *ngIf="emailModel.errors?.['invalidEmail']">Invalid email format.</span>
         </div>
       </div>
-
       <div class="form__control">
         <label for="password">Password</label>
         <input
@@ -46,9 +45,11 @@
       <div class="form__action">
         <app-button buttonText="Login" type="submit"></app-button>
       </div>
+
       <div class="form__text">
-        If you don't have an account you may <strong>Register</strong>
+        If you don't have an account you may <strong> <a href="register">Registration</a></strong>
       </div>
     </div>
   </form>
 </div>
+<app-modal [showModal]="showModal" [title]="modalTitle" [message]="modalMessage" (close)="closeModal()"></app-modal>
