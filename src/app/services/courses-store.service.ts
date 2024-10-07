@@ -13,26 +13,24 @@ import {
 } from "rxjs";
 import { CoursesService } from "./courses.service";
 import { Author, Course, CourseDTO } from "../services/course-info";
-
 @Injectable({
     providedIn: 'root'
 })
 export class CoursesStoreService {
     private isLoading$$ = new BehaviorSubject<boolean>(false);
-
     private courses$$ = new BehaviorSubject<CourseDTO[]>([]);
     private authors$$ = new BehaviorSubject<Author[]>([]);
     private selectedCourse$$ = new BehaviorSubject<CourseDTO>({});
     private selectedAuthor$$ = new BehaviorSubject<Author>({});
-
+  
     isLoading$ = this.isLoading$$.asObservable();
-
+  
     courses$ = this.courses$$.asObservable();
     selectedCourse$ = this.selectedCourse$$.asObservable();
     selectedAuthor$ = this.selectedAuthor$$.asObservable();
-
+  
     constructor(private coursesService: CoursesService) {}
-
+  
     private fetchAuthorsForCourse(course: any): Observable<any> {
       if (course.authors && course.authors.length > 0) {
         return forkJoin(
@@ -48,7 +46,7 @@ export class CoursesStoreService {
       }
       return of(course);
     }
-
+  
     private handleCourses(courses: any[]): Observable<any[]> {
       if (courses.length > 0) {
         return forkJoin(
@@ -57,7 +55,7 @@ export class CoursesStoreService {
       }
       return of([]);
     }
-
+  
     getAll() {
       this.isLoading$$.next(true);
       this.coursesService
@@ -69,7 +67,7 @@ export class CoursesStoreService {
         )
         .subscribe();
     }
-
+  
     private handleSuccess(courses: any) {
       this.courses$$.next(courses);
       this.isLoading$$.next(false);
@@ -99,22 +97,23 @@ export class CoursesStoreService {
       this.coursesService
         .getCourse(courseId)
         .pipe(
-          switchMap((course) => {
+          switchMap((course: CourseDTO) => {
+            // Check if authors exist and map their IDs to fetch the full author details
             if (course.authors && course.authors.length > 0) {
               return forkJoin(
-                course.authors.map((authorId: string) =>
-                  this.coursesService.getAuthorById(authorId)
+                course.authors.map((author: Author) =>
+                  this.coursesService.getAuthorById(author.id || '')
                 )
               ).pipe(
-                map((authors: any) => {
-                  course.authors = authors;
+                map((authors: Author[]) => {
+                  course.authors = authors; // Assign fetched authors back to the course
                   return course;
                 })
               );
             }
-            return of(course);
+            return of(course); // No authors, just return the course
           }),
-          tap((course) => this.selectedCourse$$.next(course)),
+          tap((course: CourseDTO) => this.selectedCourse$$.next(course)),
           catchError((error) => {
             console.error("Error loading course:", error);
             return of(null);

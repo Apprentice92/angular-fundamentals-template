@@ -7,6 +7,7 @@ import { fas } from '@fortawesome/free-solid-svg-icons';
 import { ActivatedRoute, Router } from "@angular/router";
 import { CoursesStoreService } from "@app/services/courses-store.service";
 import { Author, Course, CourseDTO } from "@app/services/course-info";
+import { CoursesStateFacade } from "@app/store/courses/courses.facade";
 
 @Component({
   selector: 'app-course-form',
@@ -14,19 +15,20 @@ import { Author, Course, CourseDTO } from "@app/services/course-info";
   styleUrls: ['./course-form.component.scss'],
 })
 export class CourseFormComponent {
+  selectedCourse$ = this.courseFacade.course$;
   courseForm!: FormGroup;
   courseId: string | null = null;
   nextId = 1; // Initialize ID counter
   showModal = false;
   modalTitle = "";
   modalMessage = "";
-
   constructor(
     private fb: FormBuilder,
     private library: FaIconLibrary,
     private router: Router,
     private activatedRoute: ActivatedRoute,
-    private coursesStoreService: CoursesStoreService
+    private coursesStoreService: CoursesStoreService,
+    private courseFacade: CoursesStateFacade
   ) {
     library.addIconPacks(fas);
     this.courseForm = this.fb.group({
@@ -47,17 +49,19 @@ export class CourseFormComponent {
       duration: this.fb.control(0, [Validators.required, Validators.min(1)]),
     });
   }
+
   ngOnInit() {
     this.courseId = this.activatedRoute.snapshot.paramMap.get("id");
     if (this.courseId) {
-      this.coursesStoreService.getCourse(this.courseId);
-      this.coursesStoreService.selectedCourse$.subscribe((course) => {
+      this.courseFacade.getSingleCourse(this.courseId);
+      this.courseFacade.course$.subscribe(course => {
         if (course) {
           this.populateForm(course);
         }
       });
     }
   }
+
   populateForm(course: CourseDTO) {
     this.courseForm.patchValue({
       title: course.title,
@@ -66,6 +70,7 @@ export class CourseFormComponent {
     });
     this.setAuthors(course.authors);
   }
+
   setAuthors(authors: Author[] | undefined) {
     if (authors) {
       const authorFormGroups = authors.map((author) =>
@@ -75,15 +80,16 @@ export class CourseFormComponent {
       this.courseForm.setControl("courseAuthors", authorFormArray);
     }
   }
+
   onFormSubmit() {
     if (this.courseForm.valid) {
       if (this.courseId) {
-        this.coursesStoreService.editCourse(
+        this.courseFacade.editCourse(
           this.courseId,
           this.createCourseFromForm()
         );
       } else {
-        this.coursesStoreService.createCourse(this.createCourseFromForm());
+        this.courseFacade.createCourse(this.createCourseFromForm());
       }
       this.courseForm.reset();
       this.courseAuthors.clear();
@@ -93,7 +99,6 @@ export class CourseFormComponent {
       this.courseForm.markAllAsTouched();
     }
   }
-
   createCourseFromForm(): Course {
     let courseFormValue = this.courseForm.value;
     return {
@@ -103,13 +108,11 @@ export class CourseFormComponent {
       authors: this.getAuthorsIds(),
     };
   }
-
   getAuthorsIds(): string[] {
     let ids: string[] = [];
     this.courseAuthors.value.map((author: Author) => ids.push(author.id!));
     return ids;
   }
-
   addAuthorToCourseAuthors(id: number) {
     let author = this.authors.controls.at(id);
     this.coursesStoreService
@@ -124,7 +127,6 @@ export class CourseFormComponent {
         },
       });
   }
-
   createAuthorFbGroup(author: Author) {
     return this.fb.group({
       id: [author.id, Validators.required],
@@ -137,7 +139,6 @@ export class CourseFormComponent {
   deleteCourseAuthor(id: number) {
     this.courseAuthors.removeAt(id);
   }
-
   createAuthor() {
     const newAuthor = this.courseForm.get("author");
     if (newAuthor?.valid && newAuthor.value.length >= 2) {
@@ -149,14 +150,12 @@ export class CourseFormComponent {
       newAuthor.reset();
     }
   }
-
   get courseAuthors(): FormArray {
     return this.courseForm.get("courseAuthors") as FormArray;
   }
   get authors(): FormArray {
     return this.courseForm.get("authors") as FormArray;
   }
-
   updateModal(modalTitle: string, modalMessage: string) {
     this.modalMessage = modalTitle;
     this.modalTitle = modalMessage;
